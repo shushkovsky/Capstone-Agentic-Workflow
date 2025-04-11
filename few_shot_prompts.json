@@ -5,7 +5,7 @@
     },
     {
       "question": "List all approved drugs linked to Asthma, sorted by clinical trial phase.",
-      "query": "MATCH (d:DISEASE {Name: 'Asthma'})<-[:Known_Molecule_Link_To_Disease]-(m:MOLECULE {is_Approved: true}) RETURN m.Name AS Drug, m.Max_Clinicial_Trial_Phase AS Phase, m.Drug_Type AS Type ORDER BY m.Max_Clinicial_Trial_Phase DESC"
+      "query": "MATCH (d:DISEASE {Name: 'Asthma'})<-[:Known_Molecule_Link_To_Disease]-(m:MOLECULE {is_Approved: 'True'}) RETURN m.Name AS Drug, m.Max_Clinicial_Trial_Phase AS Phase, m.Drug_Type AS Type ORDER BY m.Max_Clinicial_Trial_Phase DESC"
     },
     {
       "question": "What targets does Ibuprofen bind to, and what is the evidence score for each?",
@@ -13,50 +13,46 @@
     },
     {
         "question": "List all drugs that have reached Phase 4 clinical trials.",
-        "query": "MATCH (m:MOLECULE) WHERE m.Max_Clinicial_Trial_Phase = 4 RETURN m.Name AS Drug, m.Drug_Type AS Type, m.is_Approved AS Approved"
+        "query": "MATCH (m:MOLECULE) WHERE toInteger(m.Max_Clinicial_Trial_Phase) = 4.0 RETURN m.Name AS Drug, m.Drug_Type AS Type, m.is_Approved AS Approved"
     },
     {
-        "question": "What biomarkers are associated with Alzheimer’s Disease, and what is their confidence level?",
-        "query": "MATCH (d:DISEASE {Name: 'Alzheimer’s Disease'})-[r:chemblDiseaseToTarget|cancer_biomarkersDiseaseToTarget]->(t:TARGET) WHERE r.biomarkerName IS NOT NULL RETURN t.Name AS Target, r.biomarkerName AS Biomarker, r.confidence AS Confidence ORDER BY r.confidence DESC"
+        "question": "List drugs that target 'TUBB4A' and contains clinical trial phase data.",
+        "query": "MATCH (m:MOLECULE)-[r:chemblDrugToTarget]->(t:TARGET {Symbol: 'TUBB4A'}) WHERE m.Max_Clinicial_Trial_Phase IS NOT NULL RETURN m.Name AS Drug, t.Name AS Target"
     },
     {
-        "question": "List drugs that target 'CD20' but lack clinical trial phase data.",
-        "query": "MATCH (m:MOLECULE)-[r:chemblDrugToTarget]->(t:TARGET {Name: 'CD20'}) WHERE m.Max_Clinicial_Trial_Phase IS NULL RETURN m.Name AS Drug, t.Name AS Target"
+      "question": "Find 5 molecules similar to Aspirin",
+      "query": "MATCH (ref:MOLECULE {Name: 'ASPIRIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.8 RETURN molecule.Name AS Drug, molecule.Canonical_Smiles as SMILES, score LIMIT 5"
     },
     {
-      "question": "Find 5 molecules similar to Aspirin that are in Phase 3+ trials.",
-      "query": "MATCH (ref:MOLECULE {Name: 'ASPIRIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.8 AND molecule.Max_Clinicial_Trial_Phase >= 3 RETURN molecule.Name AS Drug, score AS Similarity, molecule.Max_Clinicial_Trial_Phase AS Phase LIMIT 5"
+      "question": "List diseases linked to the target 'PLCG2' with biomarker support.",
+      "query": "MATCH (d:DISEASE)-[r:chemblDiseaseToTarget|cancer_biomarkersDiseaseToTarget]->(t:TARGET {Symbol:'PLCG2'}) WHERE toInteger(r.score) > 0.9 AND r.biomarkerName IS NOT NULL RETURN d.Name AS Disease, r.score AS score ORDER BY r.confidence DESC"
     },
     {
-      "question": "List diseases linked to the target 'HER2' with biomarker support.",
-      "query": "MATCH (d:DISEASE)-[r:chemblDiseaseToTarget|cancer_biomarkersDiseaseToTarget]->(t:TARGET {Name: 'HER2'}) WHERE r.confidence > 0.9 AND r.biomarkerName IS NOT NULL RETURN d.Name AS Disease, r.biomarkerName AS Biomarker, r.confidence AS Confidence ORDER BY r.confidence DESC"
+        "question": "Find drugs approved for other diseases than lung cancer that target 'EGFR'.",
+        "query": "MATCH (m:MOLECULE {is_Approved: 'True'})-[:chemblDrugToTarget|cancer_biomarkersDrugToTarget]->(t:TARGET {Symbol: 'EGFR'}) WHERE NOT EXISTS ((m)-[:Known_Molecule_Link_To_Disease]->(:DISEASE {Name: 'Lung Cancer'})) RETURN m.Name AS Drug, m.Description AS Original_Use"
     },
     {
-        "question": "Find drugs approved for other diseases that target 'EGFR'.",
-        "query": "MATCH (m:MOLECULE {is_Approved: true})-[:chemblDrugToTarget|cancer_biomarkersDrugToTarget]->(t:TARGET {Name: 'EGFR'}) WHERE NOT EXISTS ((m)-[:Known_Molecule_Link_To_Disease]->(:DISEASE {Name: 'Lung Cancer'})) RETURN m.Name AS Drug, m.Description AS Original_Use"
+        "question": "Find targets where some drugs gain of function and others are a loss of function.",
+        "query": "MATCH (m1:MOLECULE)-[r1:chemblDrugToTarget]->(t:TARGET), (m2:MOLECULE)-[r2:chemblDrugToTarget]->(t) WHERE r1.variantEffect = 'LoF' AND r2.variantEffect = 'GoF' RETURN t.Name AS Target, m1.Name AS LossOfFunction, m2.Name AS GainOfFunction"
     },
     {
-        "question": "Find targets where some drugs activate and others inhibit.",
-        "query": "MATCH (m1:MOLECULE)-[r1:chemblDrugToTarget]->(t:TARGET), (m2:MOLECULE)-[r2:chemblDrugToTarget]->(t) WHERE r1.directionOnTrait = 'agonist' AND r2.directionOnTrait = 'antagonist' RETURN t.Name AS Target, m1.Name AS Agonist, m2.Name AS Antagonist"
+        "question": "Visualize all drugs and diseases connected to the target 'PTGS1'.",
+        "query": "MATCH (t:TARGET {Symbol: 'PTGS1'})<-[:chemblDrugToTarget]-(m:MOLECULE), (t)<-[:chemblDiseaseToTarget]-(d:DISEASE) RETURN m.Name, d.Name, t.Name"
     },
     {
-        "question": "Visualize all drugs and diseases connected to the target 'IL6'.",
-        "query": "MATCH (t:TARGET {Name: 'IL6'})<-[:chemblDrugToTarget]-(m:MOLECULE), (t)<-[:chemblDiseaseToTarget]-(d:DISEASE) RETURN m.Name, d.Name, t.Name"
+      "question": "Find drugs targeting proteins associated with 'Rheumatoid Arthritis'.",
+      "query": "MATCH (d:DISEASE {Name: 'rheumatoid arthritis'})-[r:chemblDiseaseToTarget|cancer_biomarkersDiseaseToTarget]->(t:TARGET) WITH t,r MATCH (m:MOLECULE)-[mt:chemblDrugToTarget|cancer_biomarkersDrugToTarget]->(t) WHERE toInteger(mt.score) > 0.7 RETURN m.Name AS Drug, t.Name AS Target, r.biomarkerName AS Biomarker, mt.score AS Target_Score ORDER BY mt.score DESC"
     },
     {
-      "question": "Find drugs targeting proteins associated with 'Rheumatoid Arthritis' through biomarker-supported pathways.",
-      "query": "MATCH (d:DISEASE {Name: 'Rheumatoid Arthritis'})-[dt:chemblDiseaseToTarget|cancer_biomarkersDiseaseToTarget]->(t:TARGET) WHERE dt.biomarkerName IS NOT NULL WITH t MATCH (m:MOLECULE)-[mt:chemblDrugToTarget|cancer_biomarkersDrugToTarget]->(t) WHERE mt.score > 0.7 RETURN m.Name AS Drug, t.Name AS Target, dt.biomarkerName AS Biomarker, mt.score AS Target_Score ORDER BY mt.score DESC"
-    },
-    {
-      "question": "Find 5 molecules similar to Metformin that are approved but not for Diabetes.",
-      "query": "MATCH (ref:MOLECULE {Name: 'METFORMIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.75 AND molecule.is_Approved = true AND NOT EXISTS ((molecule)-[:Known_Molecule_Link_To_Disease]->(:DISEASE {Name: 'Diabetes'})) RETURN molecule.Name AS Drug, score AS Similarity LIMIT 5"
+      "question": "Find 5 molecules similar to Metformin that are approved but not for Diabetes Mellitus.",
+      "query": "MATCH (ref:MOLECULE {Name: 'METFORMIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.75 AND molecule.is_Approved = 'True' AND NOT EXISTS ((molecule)-[:Known_Molecule_Link_To_Disease]->(:DISEASE {Name: 'diabetes mellitus'})) RETURN molecule.Name AS Drug, score AS Similarity LIMIT 5"
     },
     {
       "question": "Find molecules similar to Warfarin that target 'VKORC1' and have clinical trial data.",
-      "query": "MATCH (ref:MOLECULE {Name: 'WARFARIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.8 MATCH (molecule)-[r:chemblDrugToTarget]->(t:TARGET {Name: 'VKORC1'}) WHERE r.clinicalPhase IS NOT NULL RETURN molecule.Name AS Drug, score AS Similarity, r.clinicalPhase AS Phase"
+      "query": "MATCH (ref:MOLECULE {Name: 'WARFARIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.8 MATCH (molecule)-[r:chemblDrugToTarget]->(t:TARGET {Symbol: 'VKORC1'}) WHERE r.clinicalPhase IS NOT NULL RETURN molecule.Name AS Drug, score AS Similarity, r.clinicalPhase AS Phase"
     },
     {
-      "question": "Find drugs targeting either 'EGFR' or 'HER2' with Phase 3+ trials, ranked by target score.",
-      "query": "MATCH (m:MOLECULE)-[r:chemblDrugToTarget]->(t:TARGET) WHERE t.Name IN ['EGFR', 'HER2'] AND m.Max_Clinicial_Trial_Phase >= 3 RETURN m.Name AS Drug, t.Name AS Target, r.score AS Target_Score ORDER BY r.score DESC"
+      "question": "Find drugs targeting either 'EGFR' or 'NRG1' with Phase 3+ trials, ranked by target score.",
+      "query": "MATCH (m:MOLECULE)-[r:chemblDrugToTarget]->(t:TARGET) WHERE t.Symbol IN ['EGFR', 'NRG1'] AND toInteger(m.Max_Clinicial_Trial_Phase) >= 3 RETURN m.Name AS Drug, t.Name AS Target, r.score AS Target_Score ORDER BY r.score DESC"
     }
   ]
