@@ -1,7 +1,7 @@
 [
     {
         "question": "Find the top 10 drugs with activity at the same target as CETIRIZINE, then identify 5 similar drugs to each of those 10.",
-        "query": "MATCH (cet:MOLECULE {Name: 'CETIRIZINE'})-[r1:chemblDrugToTarget|cancer_biomarkersDrugToTarget]->(t:TARGET)<-[r2:chemblDrugToTarget|cancer_biomarkersDrugToTarget]-(top10:MOLECULE) WHERE cet <> top10 WITH t, top10, r2.score AS ActivityScore ORDER BY ActivityScore DESC LIMIT 10 CALL { WITH top10 CALL db.index.vector.queryNodes('molEmbed', 5, top10.Embedding) YIELD node AS similar, score RETURN similar.Name AS Similar_Drug, score AS Similarity } RETURN top10.Name AS Original_Drug, t.Name AS Target, ActivityScore, collect(Similar_Drug) AS Similar_Drugs"
+        "query": "MATCH (cet:MOLECULE {Name: 'CETIRIZINE'})-[r1:chemblDrugToTarget|cancer_biomarkersDrugToTarget]->(t:TARGET)<-[r2:chemblDrugToTarget|cancer_biomarkersDrugToTarget]-(top10:MOLECULE) WHERE cet <> top10 WITH t, top10, r2.score AS ActivityScore ORDER BY ActivityScore DESC LIMIT 10 CALL { WITH top10 CALL db.index.vector.queryNodes('molEmbed', 5, top10.embedding) YIELD node AS similar, score RETURN similar.Name AS Similar_Drug, score AS Similarity } RETURN top10.Name AS Original_Drug, t.Name AS Target, ActivityScore, collect(Similar_Drug) AS Similar_Drugs"
     },
     {
       "question": "List all approved drugs linked to Asthma, sorted by clinical trial phase.",
@@ -21,7 +21,7 @@
     },
     {
       "question": "Find 5 molecules similar to Aspirin",
-      "query": "MATCH (ref:MOLECULE {Name: 'ASPIRIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.8 RETURN molecule.Name AS Drug, molecule.Canonical_Smiles as SMILES, score LIMIT 5"
+      "query": "MATCH (ref:MOLECULE {Name: 'ASPIRIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.embedding) YIELD node AS molecule, score WHERE score > 0.8 RETURN molecule.Name AS Drug, molecule.Canonical_Smiles as SMILES, score LIMIT 5"
     },
     {
       "question": "List diseases linked to the target 'PLCG2' with biomarker support.",
@@ -45,11 +45,11 @@
     },
     {
       "question": "Find 5 molecules similar to Metformin that are approved but not for Diabetes Mellitus.",
-      "query": "MATCH (ref:MOLECULE {Name: 'METFORMIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.75 AND molecule.is_Approved = 'True' AND NOT EXISTS ((molecule)-[:Known_Molecule_Link_To_Disease]->(:DISEASE {Name: 'diabetes mellitus'})) RETURN molecule.Name AS Drug, score AS Similarity LIMIT 5"
+      "query": "MATCH (ref:MOLECULE {Name: 'METFORMIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.embedding) YIELD node AS molecule, score WHERE score > 0.75 AND molecule.is_Approved = 'True' AND NOT EXISTS ((molecule)-[:Known_Molecule_Link_To_Disease]->(:DISEASE {Name: 'diabetes mellitus'})) RETURN molecule.Name AS Drug, score AS Similarity LIMIT 5"
     },
     {
       "question": "Find molecules similar to Warfarin that target 'VKORC1' and have clinical trial data.",
-      "query": "MATCH (ref:MOLECULE {Name: 'WARFARIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.Embedding) YIELD node AS molecule, score WHERE score > 0.8 MATCH (molecule)-[r:chemblDrugToTarget]->(t:TARGET {Symbol: 'VKORC1'}) WHERE r.clinicalPhase IS NOT NULL RETURN molecule.Name AS Drug, score AS Similarity, r.clinicalPhase AS Phase"
+      "query": "MATCH (ref:MOLECULE {Name: 'WARFARIN'}) CALL db.index.vector.queryNodes('molEmbed', 10, ref.embedding) YIELD node AS molecule, score WHERE score > 0.8 MATCH (molecule)-[r:chemblDrugToTarget]->(t:TARGET {Symbol: 'VKORC1'}) WHERE r.clinicalPhase IS NOT NULL RETURN molecule.Name AS Drug, score AS Similarity, r.clinicalPhase AS Phase"
     },
     {
       "question": "Find drugs targeting either 'EGFR' or 'NRG1' with Phase 3+ trials, ranked by target score.",
