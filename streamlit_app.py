@@ -5,7 +5,7 @@ st.set_page_config(page_title="Drug Discovery Assistant", page_icon="🧬", layo
 st.title("🧪 Agentic Drug Discovery Assistant")
 st.markdown(
     """
-    Welcome! Ask any question related to **genes, drugs, or targets**  
+    Welcome! Ask any question related to **genes, drugs, or their targets**  
     and I’ll query the knowledge graph and return an intelligent answer.
     """
 )
