@@ -31,5 +31,10 @@ if submit and user_input.strip():
             formatted_answer = pretty_format(result)
             st.markdown("### ✅ Answer")
             st.markdown(formatted_answer)
+
+            cypher = result.get("cypher_statement", "")
+            if cypher:
+                with st.expander("⚙️ Show Cypher Query"):
+                    st.code(cypher, language="cypher")
         except Exception as e:
             st.error(f"⚠️ Error: {e}")
