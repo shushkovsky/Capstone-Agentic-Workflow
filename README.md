@@ -1,6 +1,6 @@
 # Agentic Workflow
 
-This is an agentic worflow based off of the LangChain Framework, attached to a Streamlit frontend.
+This is an agentic worflow based off of the LangChain Framework, attached to a Streamlit frontend. It uses a knowledge graph stored in Neo4J as an additional part of our capstone for CMU's Integrated Master's Degree in Computational Biology.
 
 ## To run:
 
